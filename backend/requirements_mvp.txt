@@ -1,0 +1,36 @@
+# MVP版本 - 地理图像变化检测系统依赖
+
+# ==== 核心Web框架 ====
+fastapi==0.104.1          # 轻量级API框架
+uvicorn[standard]==0.24.0  # ASGI服务器
+python-multipart==0.0.6   # 文件上传支持
+
+# ==== 图像处理核心 ====
+opencv-python==4.8.1.78   # 计算机视觉库
+opencv-contrib-python==4.8.1.78  # OpenCV扩展功能（SIFT/SURF）
+Pillow==10.1.0             # 图像处理
+scikit-image==0.22.0       # 科学图像处理
+numpy==1.24.4              # 数值计算
+scipy==1.11.4              # 科学计算（形态学处理）
+
+# ==== GPS和地理信息 ====
+exifread==3.0.0            # EXIF信息读取
+geopy==2.4.1               # 地理计算
+
+# ==== 基础工具 ====
+pydantic==2.5.0            # 数据验证
+python-dotenv==1.0.0       # 环境配置
+aiofiles==23.2.1           # 异步文件操作
+
+# ==== 数据处理 ====
+pandas==2.1.4              # 数据分析（结果处理）
+matplotlib==3.8.2          # 图表生成
+
+# ==== 开发和测试工具 ====
+pytest==7.4.3              # 测试框架
+requests==2.31.0           # HTTP客户端（测试用）
+
+# ==== 实时通信和无人机数据 ====
+paho-mqtt==1.6.1           # MQTT客户端（无人机通信）
+websockets==12.0           # WebSocket支持
+websocket-client==1.6.4    # WebSocket客户端

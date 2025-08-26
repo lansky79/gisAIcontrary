@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地理测绘变化检测系统 - MVP版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-box {
+            border: 3px dashed #ddd;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-box:hover {
+            border-color: #4CAF50;
+            background-color: #f9f9f9;
+        }
+        
+        .upload-box.dragover {
+            border-color: #4CAF50;
+            background-color: #e8f5e8;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .upload-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .upload-box p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .description-section {
+            margin-bottom: 30px;
+        }
+        
+        .description-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .description-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .compare-button {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .compare-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .compare-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .results h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .result-image {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ 地理测绘变化检测系统</h1>
+            <p>上传两张地理图像，智能识别变化区域</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="upload-box" onclick="document.getElementById('image1').click()">
+                    <div class="upload-icon">📷</div>
+                    <h3>历史基准图像</h3>
+                    <p>点击上传或拖拽图像文件<br>支持 JPG, PNG, TIFF 格式</p>
+                    <input type="file" id="image1" class="file-input" accept="image/*">
+                    <img id="preview1" class="preview-image" style="display: none;">
+                </div>
+                
+                <div class="upload-box" onclick="document.getElementById('image2').click()">
+                    <div class="upload-icon">📸</div>
+                    <h3>新拍摄图像</h3>
+                    <p>点击上传或拖拽图像文件<br>支持 JPG, PNG, TIFF 格式</p>
+                    <input type="file" id="image2" class="file-input" accept="image/*">
+                    <img id="preview2" class="preview-image" style="display: none;">
+                </div>
+            </div>
+            
+            <div class="description-section">
+                <label for="description"><strong>检测描述（可选）：</strong></label>
+                <textarea id="description" class="description-input" 
+                    placeholder="请描述需要检测的区域或特定变化类型，如：新建筑物、道路变化、植被变化等..."></textarea>
+            </div>
+            
+            <button class="compare-button" id="compareBtn" disabled onclick="startComparison()">
+                开始变化检测
+            </button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <h3>正在分析图像变化...</h3>
+                <p>这可能需要几秒钟时间，请稍候</p>
+            </div>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="results" id="results">
+                <h2>🎯 变化检测结果</h2>
+                
+                <div class="stats-grid" id="stats">
+                    <!-- 统计信息将在这里显示 -->
+                </div>
+                
+                <div style="text-align: center;">
+                    <img id="resultImage" class="result-image" alt="检测结果">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = { image1: null, image2: null };
+        
+        // 文件选择处理
+        document.getElementById('image1').addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0], 'image1', 'preview1');
+        });
+        
+        document.getElementById('image2').addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0], 'image2', 'preview2');
+        });
+        
+        function handleFileSelect(file, inputId, previewId) {
+            if (file) {
+                selectedFiles[inputId] = file;
+                
+                // 显示预览
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(previewId);
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // 检查是否可以开始比较
+                updateCompareButton();
+            }
+        }
+        
+        function updateCompareButton() {
+            const btn = document.getElementById('compareBtn');
+            if (selectedFiles.image1 && selectedFiles.image2) {
+                btn.disabled = false;
+                btn.textContent = '开始变化检测';
+            } else {
+                btn.disabled = true;
+                btn.textContent = '请先上传两张图像';
+            }
+        }
+        
+        async function startComparison() {
+            if (!selectedFiles.image1 || !selectedFiles.image2) {
+                showError('请先上传两张图像');
+                return;
+            }
+            
+            // 隐藏之前的结果和错误
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            
+            // 显示加载状态
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('compareBtn').disabled = true;
+            
+            try {
+                // 准备表单数据
+                const formData = new FormData();
+                formData.append('image1', selectedFiles.image1);
+                formData.append('image2', selectedFiles.image2);
+                
+                const description = document.getElementById('description').value;
+                if (description) {
+                    formData.append('description', description);
+                }
+                
+                // 发送请求
+                const response = await fetch('/api/upload-and-compare', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // 显示结果
+                displayResults(result);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('检测失败: ' + error.message);
+            } finally {
+                // 隐藏加载状态
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('compareBtn').disabled = false;
+            }
+        }
+        
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats');
+            const resultImage = document.getElementById('resultImage');
+            
+            // 构建统计信息
+            const stats = result.detection_results;
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.change_regions_count}</div>
+                    <div class="stat-label">变化区域数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.change_percentage}%</div>
+                    <div class="stat-label">变化比例</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total_change_area_pixels}</div>
+                    <div class="stat-label">变化区域像素</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.transform_applied ? '✅' : '❌'}</div>
+                    <div class="stat-label">图像对齐</div>
+                </div>
+            `;
+            
+            // 显示结果图像
+            resultImage.src = result.result_image_url;
+            
+            // 显示结果区域
+            resultsDiv.style.display = 'block';
+            
+            // 滚动到结果区域
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // 拖拽上传支持
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            document.querySelectorAll('.upload-box').forEach(box => {
+                box.addEventListener(eventName, preventDefaults, false);
+            });
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            document.querySelectorAll('.upload-box').forEach(box => {
+                box.addEventListener(eventName, () => box.classList.add('dragover'), false);
+            });
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            document.querySelectorAll('.upload-box').forEach(box => {
+                box.addEventListener(eventName, () => box.classList.remove('dragover'), false);
+            });
+        });
+        
+        // 拖拽文件处理
+        document.querySelectorAll('.upload-box').forEach((box, index) => {
+            box.addEventListener('drop', function(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const inputId = index === 0 ? 'image1' : 'image2';
+                    const previewId = index === 0 ? 'preview1' : 'preview2';
+                    handleFileSelect(files[0], inputId, previewId);
+                }
+            });
+        });
+        
+        // 初始化
+        updateCompareButton();
+    </script>
+</body>
+</html>
